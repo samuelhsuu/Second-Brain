@@ -6,6 +6,6 @@ A personal assistant that lets you conversate with your own notes and documents 
 
 * Orchestration: LlamaIndex
 * Vector store:  ChromaDB (local)
-* Embeddings:    OpenAI 'text-embedding-3-small'
-* LLM:           'gpt-4o'
+* Embeddings:    Ollama 'nomic-embed-text' (local) or OpenAI 'text-embedding-3-small'
+* LLM:           Ollama 'llama3.2' (local) or 'gpt-4o'
 * Data Sources:  Obsidian, Google Drive
