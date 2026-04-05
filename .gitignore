@@ -1,0 +1,25 @@
+# Environment
+.env
+*.env
+
+# ChromaDB local store
+chroma_store/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Google OAuth Token
+token.json
+credentials.json
+
+# Jupyter
+.ipynb_checkpoints/
