@@ -5,7 +5,7 @@ from store.chroma_store import get_vector_store, get_storage_context
 from pipeline.embedder import configure_embed_model
 from config import OBSIDIAN_VAULT_PATH
 
-
+# Reads, chunks, embeds
 def build_obsidian_index():
     configure_embed_model()
 
@@ -40,8 +40,8 @@ def build_obsidian_index():
     print("Obsidian vault indexed successfully")
     return index
 
+# Opens existing ChromaDB index so re-embedding isn't necessary
 def load_obsidian_index():
-    """Load existing index without re-embedding."""
     configure_embed_model()
     vector_store = get_vector_store()
     storage_context = get_storage_context()
