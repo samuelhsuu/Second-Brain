@@ -13,7 +13,7 @@ def build_obsidian_index():
     documents = SimpleDirectoryReader(
         input_dir=OBSIDIAN_VAULT_PATH,
         required_exts=[".md"],
-        recurisve=True,
+        recursive=True,
         filename_as_id=True,
     ).load_data()
 
