@@ -7,11 +7,11 @@ def configure_embed_model():
     from llama_index.embeddings.ollama import OllamaEmbedding
     Settings.embed_model = OllamaEmbedding(model_name = EMBED_MODEL)
     print(f"Using local embedding model: {EMBED_MODEL}")
-  else:
+  """else:
     # Use OpenAI embedding
     from llama_index.embeddings.openai import OpenAIEmbedding
     import openai
     from config import OPENAI_API_KEY
     openai.api_key = OPENAI_API_KEY
     Settings.embed_model = OpenAIEmbedding(model = EMBED_MODEL)
-    print(f"Using OpenAI embedding model: {EMBED_MODEL}")
+    print(f"Using OpenAI embedding model: {EMBED_MODEL}")"""

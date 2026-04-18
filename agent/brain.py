@@ -16,14 +16,32 @@ def get_query_engine():
 
 # Runs the question asked through full RAG pipeline
 def ask(question: str):
-	engine = get_query_engine()
-	response = engine.query(question)
+    engine = get_query_engine()
+    response = engine.query(question)
 
-	print(f"\nAnswer: \n{response}\n")
-	print("Sources:")
-	for node in response.source_nodes:
-		meta = node.metadata
-		print(f" Obsidian ({meta.get('vault', 'unknown')}) - "
-			  f"{meta.get('file_name', 'unknown')} "
-			  f"(score: {node.score:.2f})"
-			)
+    print(f"\nAnswer:\n{response}\n")
+
+    print("\nSources:")
+    print(f"{'─' * 72}")
+    print(f"  {'File':<28} {'Course':<10} {'Semester':<13} {'Modified':<12} {'Score'}")
+    print(f"{'─' * 72}")
+
+    for node in response.source_nodes:
+        meta = node.metadata
+        file_name = meta.get("file_name", "unknown")
+        course = meta.get("course", "unknown")
+        semester = meta.get("semester", "unknown")
+        modified = meta.get("last_modified_date", "unknown")
+        score = node.score or 0.0
+
+        # Truncate long values to keep table aligned
+        if len(file_name) > 26:
+            file_name = file_name[:23] + "..."
+        if len(course) > 8:
+            course = course[:8]
+        if len(semester) > 11:
+            semester = semester[:11]
+
+        print(f"  {file_name:<28} {course:<10} {semester:<13} {modified:<12} {score:.2f}")
+
+    print(f"{'─' * 72}\n")

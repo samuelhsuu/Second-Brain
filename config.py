@@ -14,7 +14,7 @@ COLLECTION_NAME = "second_brain"
 # Models
 if USE_LOCAL_MODELS:
     EMBED_MODEL = "nomic-embed-text"
-    LLM_MODEL = "llama3.2:1b"
+    LLM_MODEL = "mistral:7b-instruct-q4_0"
 else:
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     EMBED_MODEL = "text-embedding-3-small"

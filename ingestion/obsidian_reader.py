@@ -21,13 +21,22 @@ def build_obsidian_index():
 
     for doc in documents:
         file_path = doc.metadata.get("file_path", "")
-        parts = file_path.replace(OBSIDIAN_VAULT_PATH, "").strip("/").split("/")
-        vault_name = parts[0] if len(parts) > 1 else "unknown"
+
+        relative = file_path.replace(OBSIDIAN_VAULT_PATH, "").lstrip("/").lstrip("\\")
+        parts = relative.replace("\\", "/").split("/")
+
+        semester = parts[0] if len(parts) > 0 else "unknown"
+        course = parts[1] if len(parts) > 1 else "unknown"
 
         doc.metadata["source"] = "obsidian"
-        doc.metadata["vault"] = vault_name
+        doc.metadata["vault"] = "Stony Brook"
+        doc.metadata["semester"] = semester
+        doc.metadata["course"] = course
         doc.metadata["file_name"] = doc.metadata.get("file_name", "unknown")
         doc.metadata["file_path"] = file_path
+        doc.metadata["creation_date"] = doc.metadata.get("creation_date", "unknown")
+        doc.metadata["last_modified_date"] = doc.metadata.get("last_modified_date", "unknown")
+
     splitter = SentenceSplitter(chunk_size=512, chunk_overlap=50)
     storage_context = get_storage_context()
 
