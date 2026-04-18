@@ -10,5 +10,10 @@ A personal assistant that lets you conversate with your own notes and documents 
 * LLM:           Ollama 'llama3.2:1b' (local) or 'gpt-4o'
 * Data Sources:  Obsidian, Google Drive
 
+## Goals
+* Establish Obsidian as a source ✓
+* Establish Google Drive as a source
+* Develop a UI
+
 ## Current state
-Obsidian notes can be indexed and cited by LLM
+Obsidian notes can be indexed and cited by 
