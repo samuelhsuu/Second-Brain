@@ -58,7 +58,7 @@ def fetch_drive_files(service):
 	mime_query = " or ".join(
 		[f"mimeType='{mime}'"for mime in SUPPORTED_MIME_TYPES.keys()]
 	)
-	query = f"({mime_query}) and trashed=false"
+	query = f"({mime_query}) and trashed=false and 'me' in owners"
 
 	files = []
 	page_token = None
