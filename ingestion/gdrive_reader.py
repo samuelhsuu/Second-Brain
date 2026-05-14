@@ -67,7 +67,7 @@ def fetch_drive_files(service):
 		response = service.files().list(
 			q=query,
 			spaces="drive",
-			fielsd="nextPageToken, files(id, name, mimeType, modifiedTime, parents)",
+			fields="nextPageToken, files(id, name, mimeType, modifiedTime, parents)",
 			pageToken=page_token
 		).execute()
 
@@ -136,3 +136,13 @@ def build_gdrive_index():
 		show_progress=True
 	)
 	return index
+
+def load_gdrive_index():
+	"""Load existing index without re-fetching from Drive"""
+	configure_embed_model()
+	vector_store = get_vector_store()
+	storage_context = get_storage_context()
+	return VectorStoreIndex.from_vector_store(
+		vector_store,
+		storage_context=storage_context
+	)
