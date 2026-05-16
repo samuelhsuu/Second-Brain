@@ -52,24 +52,45 @@ def get_query_engine():
     )
     return query_engine
 
-def ask(question: str):
+def _source_from_node(node):
+    meta = node.metadata
+    return {
+        "file_name": meta.get("file_name", "unknown"),
+        "source": meta.get("source", "unknown"),
+        "course": meta.get("course", "-"),
+        "semester": meta.get("semester", "-"),
+        "score": float(node.score or 0.0),
+        "file_path": meta.get("file_path", ""),
+    }
+
+
+def query_brain(question: str):
     engine = get_query_engine()
     response = engine.query(question)
 
-    print(f"\nAnswer:\n{response}\n")
+    return {
+        "answer": str(response),
+        "sources": [_source_from_node(node) for node in response.source_nodes],
+    }
+
+
+def ask(question: str):
+    result = query_brain(question)
+
+    print(f"\nAnswer:\n{result['answer']}\n")
 
     print("\nSources:")
     print(f"{'─' * 80}")
     print(f"  {'File':<28} {'Source':<14} {'Course':<10} {'Semester':<13} {'Score'}")
     print(f"{'─' * 80}")
 
-    for node in response.source_nodes:
-        meta = node.metadata
-        file_name = meta.get("file_name", "unknown")
-        source = meta.get("source", "unknown")
+    for source_info in result["sources"]:
+        meta = source_info
+        file_name = source_info["file_name"]
+        source = source_info["source"]
         course = meta.get("course", "—")
         semester = meta.get("semester", "—")
-        score = node.score or 0.0
+        score = source_info["score"]
 
         if len(file_name) > 26:
             file_name = file_name[:23] + "..."
