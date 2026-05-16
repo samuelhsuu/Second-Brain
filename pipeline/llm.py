@@ -8,11 +8,11 @@ def configure_llm():
 
         Settings.llm = Ollama(model=LLM_MODEL, request_timeout=300)
         print(f"Using local LLM: {LLM_MODEL}")
-    """else:
+    else:
         from llama_index.llms.openai import OpenAI
         import openai
         from config import OPENAI_API_KEY
 
         openai.api_key = OPENAI_API_KEY
         Settings.llm = OpenAI(model=LLM_MODEL)
-        print(f"Using local LLM: {LLM_MODEL}")"""
+        print(f"Using local LLM: {LLM_MODEL}")

@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv(override=True)
 
 # Toggle
-USE_LOCAL_MODELS = os.getenv("USE_LOCAL_MODELS", "true").lower() == "true"
+USE_LOCAL_MODELS = False#os.getenv("USE_LOCAL_MODELS", "true").lower() == "true"
 
 # Paths
 OBSIDIAN_VAULT_PATH = os.getenv("OBSIDIAN_VAULT_PATH", "").strip('"').strip("'")

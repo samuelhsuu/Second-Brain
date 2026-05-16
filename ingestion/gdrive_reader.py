@@ -18,6 +18,14 @@ SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 CREDENTIALS_FILE = "credentials.json"
 TOKEN_FILE = "token.json"
 
+EXCLUDED_EXTENSIONS = {
+    # Image types
+    '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.tiff', '.svg',
+	# File types
+    '.zip', '.tar', '.gz', '.rar', '.7z', '.tgz'
+}
+EXCLUDED_KEYWORDS = {'dataset', 'training', 'images', 'photos', 'youtube'}
+
 # File types to index
 SUPPORTED_MIME_TYPES = {
 	"application/vnd.google-apps.document" : "Google Doc",
@@ -54,15 +62,15 @@ def authenticate():
 	print("Google Drive authenticated successfully")
 	return service
 
-def fetch_drive_files(service, max_files=200):
+def fetch_drive_files(service, max_files=None):
     mime_query = " or ".join(
         [f"mimeType='{mime}'" for mime in SUPPORTED_MIME_TYPES.keys()]
     )
+
     query = (
         f"({mime_query}) "
         f"and trashed=false "
-        f"and 'me' in owners "
-        f"and fileSize < 500000"
+        f"and 'me' in owners"
     )
 
     files = []
@@ -72,79 +80,121 @@ def fetch_drive_files(service, max_files=200):
         response = service.files().list(
             q=query,
             spaces="drive",
-            pageSize=min(100, max_files - len(files)),
+            pageSize=100,
             fields="nextPageToken, files(id, name, mimeType, modifiedTime, parents, size)",
-            orderBy="modifiedTime desc",  # most recently modified first
+            orderBy="modifiedTime desc",
             pageToken=page_token
         ).execute()
 
-        files.extend(response.get("files", []))
+        batch = response.get("files", [])
+
+        for f in batch:
+            name = f.get("name", "").lower()
+            mime_type = f.get("mimeType", "").lower()
+            
+            # 1. Skip explicit image or archive extensions
+            if any(name.endswith(ext) for ext in EXCLUDED_EXTENSIONS):
+                print(f"  [Skipped] Image/Archive extension blocked: {f['name']}")
+                continue
+                
+            # 2. Skip anything Google Drive officially flags as an image MIME type
+            if mime_type.startswith("image/"):
+                print(f"  [Skipped] Image MIME type blocked: {f['name']}")
+                continue
+
+            # 3. Skip files matching training/dataset keywords
+            if any(keyword in name for keyword in EXCLUDED_KEYWORDS):
+                print(f"  [Skipped] Keyword match ('{name}'): {f['name']}")
+                continue
+
+            # 4. Skip binary files larger than 500 KB 
+            # (Safe for Google Docs, which don't return a 'size' attribute)
+            if "size" in f:
+                size = int(f["size"])
+                if size > 500000:
+                    print(f"  [Skipped] File too large ({(size/1024):.1f} KB): {f['name']}")
+                    continue
+
+            files.append(f)
+
         page_token = response.get("nextPageToken")
 
-        # stop if limitt reached
-        if len(files) >= max_files or not page_token:
+        if not page_token:
             break
 
-    files = files[:max_files]
-    print(f"Found {len(files)} files in Google Drive (capped at {max_files})")
+    print(f"\nFound {len(files)} valid files to process in Google Drive")
     return files
 
-def download_file(service, file):
-	mime_type = file["mimeType"]
-	file_id = file["id"]
-
-	try:
-		if mime_type in EXPORT_MIME:
-			request = service.files().export_media(
-				fileID=file_id,
-				mimeType=EXPORT_MIME[mime_type]
-			)
-		else:
-			request = service.files().get_media(fileId=file_id)
-		buffer = io.BytesIO()
-		downloader = MediaIoBaseDownload(buffer, request)
-
-		done = False
-		while not done:
-			_, done = downloader.next_chunk()
-		return buffer.getvalue().decode("utf-8", errors="ignore")
-	except Exception as e:
-		print(f"   Skipping {file['name']}: {e}")
-		return None
 
 def build_gdrive_index():
-	configure_embed_model()
-	service = authenticate()
-	files = fetch_drive_files(service)
+    configure_embed_model()
+    service = authenticate()
+    files = fetch_drive_files(service)  # No cap argument needed anymore
 
-	documents = []
-	for file in files:
-		content = download_file(service, file)
-		if not content or not content.strip():
-			continue
+    if not files:
+        print("No supported files found in Google Drive.")
+        return
 
-		doc = Document(
-			text=content,
-			metadata={
-				"source":"google_drive",
-				"file_name":file["name"],
-				"file_id": file["id"],
-				"mime_type": SUPPORTED_MIME_TYPES.get(file["mimeType"], "unknown"),
-				"last_modified_date":file.get("modifiedTime","unknown")[:10],
-			}
-		)
-		documents.append(doc)
+    documents = []
 
-	splitter = SentenceSplitter(chunk_size=512, chunk_overlap=50)
-	storage_context = get_storage_context()
+    for file in files:
+        print(f"  Processing: {file['name']}")
+        content = download_file(service, file)
 
-	index = VectorStoreIndex.from_documents(
-		documents,
-		storage_context=storage_context,
-		transformations=[splitter],
-		show_progress=True
-	)
-	return index
+        if not content or not content.strip():
+            continue
+
+        doc = Document(
+            text=content,
+            metadata={
+                "source": "google_drive",
+                "file_name": file["name"],
+                "file_id": file["id"],
+                "mime_type": SUPPORTED_MIME_TYPES.get(file["mimeType"], "unknown"),
+                "last_modified_date": file.get("modifiedTime", "unknown")[:10],
+            }
+        )
+        documents.append(doc)
+
+    print(f"\nIndexing {len(documents)} Drive documents...")
+
+    splitter = SentenceSplitter(chunk_size=512, chunk_overlap=50)
+    storage_context = get_storage_context()
+
+    index = VectorStoreIndex.from_documents(
+        documents,
+        storage_context=storage_context,
+        transformations=[splitter],
+        show_progress=True
+    )
+
+    print("Google Drive indexed successfully!")
+    return index
+
+def download_file(service, file):
+    mime_type = file["mimeType"]
+    file_id = file["id"]
+
+    try:
+        if mime_type in EXPORT_MIME:
+            # FIX: Change fileID=file_id to fileId=file_id
+            request = service.files().export_media(
+                fileId=file_id,
+                mimeType=EXPORT_MIME[mime_type]
+            )
+        else:
+            request = service.files().get_media(fileId=file_id)
+            
+        buffer = io.BytesIO()
+        downloader = MediaIoBaseDownload(buffer, request)
+
+        done = False
+        while not done:
+            _, done = downloader.next_chunk()
+        return buffer.getvalue().decode("utf-8", errors="ignore")
+    except Exception as e:
+        print(f"   Skipping {file['name']}: {e}")
+        return None
 
 def load_gdrive_index():
 	"""Load existing index without re-fetching from Drive"""
