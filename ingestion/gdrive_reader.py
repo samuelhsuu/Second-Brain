@@ -54,31 +54,40 @@ def authenticate():
 	print("Google Drive authenticated successfully")
 	return service
 
-def fetch_drive_files(service):
-	mime_query = " or ".join(
-		[f"mimeType='{mime}'"for mime in SUPPORTED_MIME_TYPES.keys()]
-	)
-	query = f"({mime_query}) and trashed=false and 'me' in owners"
+def fetch_drive_files(service, max_files=200):
+    mime_query = " or ".join(
+        [f"mimeType='{mime}'" for mime in SUPPORTED_MIME_TYPES.keys()]
+    )
+    query = (
+        f"({mime_query}) "
+        f"and trashed=false "
+        f"and 'me' in owners "
+        f"and fileSize < 500000"
+    )
 
-	files = []
-	page_token = None
+    files = []
+    page_token = None
 
-	while True:
-		response = service.files().list(
-			q=query,
-			spaces="drive",
-			fields="nextPageToken, files(id, name, mimeType, modifiedTime, parents)",
-			pageToken=page_token
-		).execute()
+    while True:
+        response = service.files().list(
+            q=query,
+            spaces="drive",
+            pageSize=min(100, max_files - len(files)),
+            fields="nextPageToken, files(id, name, mimeType, modifiedTime, parents, size)",
+            orderBy="modifiedTime desc",  # most recently modified first
+            pageToken=page_token
+        ).execute()
 
-		files.extend(response.get("files", []))
-		page_token = response.get("nextPageToken")
+        files.extend(response.get("files", []))
+        page_token = response.get("nextPageToken")
 
-		if not page_token:
-			break
+        # stop if limitt reached
+        if len(files) >= max_files or not page_token:
+            break
 
-	print(f"Found {len(files)} files in Google Drive")
-	return files
+    files = files[:max_files]
+    print(f"Found {len(files)} files in Google Drive (capped at {max_files})")
+    return files
 
 def download_file(service, file):
 	mime_type = file["mimeType"]
