@@ -12,8 +12,8 @@ A personal assistant that lets you conversate with your own notes and documents 
 
 ## Goals
 * Establish Obsidian as a source ✓
-* Establish Google Drive as a source
+* Establish Google Drive as a source ✓
 * Develop a UI
 
 ## Current state
-Obsidian notes can be indexed and cited by 
+Obsidian and Google Drive notes can be cited and LLM provides detailed responses
