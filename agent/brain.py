@@ -81,3 +81,43 @@ def ask(question: str):
         print(f"  {file_name:<28} {source:<14} {course:<10} {semester:<13} {score:.2f}")
 
     print(f"{'─' * 80}\n")
+
+def query_with_sources(question: str, engine):
+    response = engine.query(question)
+
+    sources = []
+    for node in response.source_nodes:
+        meta = node.metadata
+        sources.append({
+            "file_name" : meta.get("file_name", "unknown"),
+            "source" : meta.get("source", "unknown"),
+            "course" : meta.get("course", "-"),
+            "semester" : meta.get("semester", "-"),
+            "modified" : meta.get("last_modified_date", "-"),
+            "score": round(node.score or 0.0, 2)
+        })
+    return str(response), sources
+def stream_response(question: str, engine):
+    from llama_index.core.query_engine import RetrieverQueryEngine
+    
+    response = engine.query(question)
+    answer = str(response)
+    sources = []
+    
+    for node in response.source_nodes:
+        meta = node.metadata
+        sources.append({
+            "file_name": meta.get("file_name", "unknown"),
+            "source": meta.get("source", "unknown"),
+            "course": meta.get("course", "—"),
+            "semester": meta.get("semester", "—"),
+            "modified": meta.get("last_modified_date", "—"),
+            "score": round(node.score or 0.0, 2),
+        })
+    
+    # yield answer word by word to simulate streaming
+    for word in answer.split(" "):
+        yield word + " "
+    
+    # store sources on generator so app.py can access them after streaming
+    stream_response.last_sources = sources
