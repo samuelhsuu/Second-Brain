@@ -2,6 +2,8 @@
 
 A personal assistant that lets you conversate with your own notes and documents using RAG (Retrieval-Augmented Generation).
 
+https://github.com/user-attachments/assets/8b034af9-d177-4810-8118-a76b79511649
+
 ## Tools
 
 * Orchestration: LlamaIndex
@@ -13,7 +15,7 @@ A personal assistant that lets you conversate with your own notes and documents 
 ## Goals
 * Establish Obsidian as a source ✓
 * Establish Google Drive as a source ✓
-* Develop a UI
+* Develop a UI ✓
 
 ## Current state
-Obsidian and Google Drive notes can be cited and LLM provides detailed responses
+A UI is available to interact with the model. It also supports reindexing notes, sorting by sources, and a source dropdown table
